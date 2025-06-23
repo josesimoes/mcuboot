@@ -1431,6 +1431,26 @@ config BOOT_FIH_PROFILE_DEFAULT_HIGH
 
 endmenu
 
+config MCUBOOT_LOGICAL_SECTOR_SIZE
+	int "Size of a logical sector"
+	default 0
+	help
+	  Set to 0 to use hardware sectors. Any other value here should be
+	  aligned to hardware sectors in size and alignment.
+
+config MCUBOOT_LOGICAL_SECTOR_SIZE_SET
+	bool
+	default y
+	depends on MCUBOOT_LOGICAL_SECTOR_SIZE != 0
+
+config MCUBOOT_VERIFY_LOGICAL_SECTORS
+	bool "Validate logical sector layout"
+	default y
+	depends on MCUBOOT_LOGICAL_SECTOR_SIZE_SET
+	help
+	  Validation of logical sector size against hardware constrains.
+	  Should be used to validate compile-time configuration against run-time
+	  system.
 config MCUBOOT_CHECK_HEADER_LOAD_ADDRESS
 	bool "Use load address to verify application is in proper slot"
 	help
