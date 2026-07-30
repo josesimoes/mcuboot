@@ -158,7 +158,6 @@ BOOT_LOG_MODULE_DECLARE(mcuboot);
 #endif
 
 #define SWAP_USING_OFFSET_SECTOR_UPDATE_BEGIN 1
-#define BOOT_DIRECT_UPLOAD_SECONDARY_SLOT_ID_REMAINDER 0
 
 static char in_buf[MCUBOOT_SERIAL_MAX_RECEIVE_SIZE + 1];
 #ifndef MCUBOOT_SERIAL_RAW_PROTOCOL
@@ -990,6 +989,10 @@ bs_upload(char *buf, int len)
          */
         const size_t area_size = flash_area_get_size(fap);
 
+#if defined(MCUBOOT_SWAP_USING_OFFSET) && defined(MCUBOOT_SERIAL_DIRECT_IMAGE_UPLOAD)
+        bool is_secondary = false;
+#endif
+
         curr_off = 0;
 #if defined(MCUBOOT_ERASE_PROGRESSIVELY) && defined(BOOT_IMAGE_HAS_STATUS_FIELDS)
         /* Get trailer sector information; this is done early because inability to get
@@ -1033,8 +1036,19 @@ bs_upload(char *buf, int len)
         img_size = img_size_tmp;
 
 #if defined(MCUBOOT_SWAP_USING_OFFSET) && defined(MCUBOOT_SERIAL_DIRECT_IMAGE_UPLOAD)
-        if (img_num > 0 &&
-            (img_num % BOOT_NUM_SLOTS) == BOOT_DIRECT_UPLOAD_SECONDARY_SLOT_ID_REMAINDER) {
+        /* The direct-image id numbering is defined by the port, in
+         * flash_area_id_from_direct_image(), so the resolved flash area id --
+         * not the id itself -- decides whether this upload targets a secondary
+         * slot.
+         */
+        for (uint8_t i = 0; i < BOOT_IMAGE_NUMBER; i++) {
+            if (fap->fa_id == FLASH_AREA_IMAGE_SECONDARY(i)) {
+                is_secondary = true;
+                break;
+            }
+        }
+
+        if (is_secondary) {
 #if defined(MCUBOOT_LOGICAL_SECTOR_SIZE) && MCUBOOT_LOGICAL_SECTOR_SIZE != 0
             /* The swap algorithms position slots by logical sectors, so the image
              * in the secondary slot starts one logical sector in; the physical
