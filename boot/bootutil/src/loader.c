@@ -1241,6 +1241,10 @@ boot_perform_update(struct boot_loader_state *state, struct boot_status *bs)
     FIH_CALL(boot_validate_slot, fih_rc, state, BOOT_SLOT_PRIMARY, bs, 0);
     if (boot_check_header_erased(state, BOOT_SLOT_PRIMARY) || FIH_NOT_EQ(fih_rc, FIH_SUCCESS)) {
         rc = boot_copy_image(state, bs);
+        if (rc == 0) {
+            /* Nothing to revert to, so treat this install as permanent. */
+            BOOT_SWAP_TYPE(state) = BOOT_SWAP_TYPE_PERM;
+        }
     } else {
         rc = boot_swap_image(state, bs);
     }
