@@ -1908,6 +1908,14 @@ context_boot_go(struct boot_loader_state *state, struct boot_rsp *rsp)
         if (FIH_NOT_EQ(fih_rc, FIH_SUCCESS) ||
             FIH_EQ(fih_rc, FIH_FAILURE) ||
             FIH_EQ(fih_rc, FIH_NO_BOOTABLE_IMAGE)) {
+#if defined(MCUBOOT_ALLOW_NON_BOOTABLE_SECONDARY_IMAGES) && (BOOT_IMAGE_NUMBER > 1)
+            /* Only image 0 is required to boot; mask any other non-bootable image instead. */
+            if (BOOT_CURR_IMG(state) != 0) {
+                state->img_mask[BOOT_CURR_IMG(state)] = true;
+                ++fih_cnt;
+                continue;
+            }
+#endif
             FIH_SET(fih_rc, FIH_FAILURE);
             goto out;
         }
@@ -1920,6 +1928,14 @@ context_boot_go(struct boot_loader_state *state, struct boot_rsp *rsp)
             BOOT_LOG_ERR("Bad image magic 0x%lx; Image=%u", (unsigned long)
                          BOOT_IMG(state, BOOT_SLOT_PRIMARY).hdr.ih_magic,
                          BOOT_CURR_IMG(state));
+#if defined(MCUBOOT_ALLOW_NON_BOOTABLE_SECONDARY_IMAGES) && (BOOT_IMAGE_NUMBER > 1)
+            /* Only image 0 is required to boot; mask any other non-bootable image instead. */
+            if (BOOT_CURR_IMG(state) != 0) {
+                state->img_mask[BOOT_CURR_IMG(state)] = true;
+                ++fih_cnt;
+                continue;
+            }
+#endif
             rc = BOOT_EBADIMAGE;
             FIH_SET(fih_rc, FIH_FAILURE);
             goto out;
